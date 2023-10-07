@@ -1,31 +1,11 @@
 import pandas as pd
 import seaborn as sns
-
+import matplotlib.pyplot as plt
 
 data = pd.read_csv("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\kd by session.csv")
+kd_data = pd.read_csv("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\siege stats - just kd.csv")
 
-#%%
-
-print(data)
-print(type(data))
-
-#%%
-
-def proof_of_concept(session_num):
-    kills = data.loc[data["session"] == session_num , "kills"].sum()
-    deaths = data.loc[data["session"] == session_num, "deaths"].sum()
-    
-    print(session_num, kills, deaths)
-    
-#%%
-
-proof_of_concept(1)
-
-#%%
-
-for i in range(1,max(data["session"]+1)):
-    proof_of_concept(i)
-    
+''' kd by session '''
 #%%
 
 sessions = []
@@ -48,25 +28,12 @@ def kill_death(session_num):
 
 #%%
 
-kill_death(1)
-
-#%%
-
 for i in range(1, max(data["session"]+1)):
     kill_death(i)
     
 #%%
 
-print(sessions)
-print(ratios)
-
-#%%
-
 df = pd.DataFrame(data = ratios)
-
-#%%
-
-print(df)
 
 #%%
 
@@ -74,9 +41,47 @@ df.to_csv("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\kd ratios.csv")
 
 #%%
 
-sns.regplot(x = sessions, y = ratios, ci = None)
-
-sns.lmplot(x = sessions, y = ratios, ci = None, robust = True)
+plt.figure(figsize = (8, 8),
+           dpi = 1000)
+sns.regplot(x = sessions,
+            y = ratios,
+            ci = None,
+            scatter_kws = {"color": "gray"},
+            line_kws = {"color": "cyan"})
 
 #%%
+
+''' kd data from all games '''
+
+kd_data_new = kd_data.fillna(0)
+
+kills = kd_data_new["Kills"]
+deaths = kd_data_new["Deaths"]
+assists = kd_data_new["Assists"]
+games = kd_data_new["Game"]
+
+ratios_all = []
+
+#%%
+
+for i in range(len(kd_data_new)):
+    if kd_data_new["Deaths"][i] == 0:
+        ratio = kd_data_new["Kills"][i]
+    else:
+        ratio = kd_data_new["Kills"][i]/kd_data_new["Deaths"][i]
+    ratios_all.append(ratio)
+        
+#%%
+
+plt.figure(figsize = (8, 8),
+           dpi = 1000)
+sns.regplot(x = games,
+            y = ratios_all,
+            ci = None,
+            scatter_kws = {"color": "gray"},
+            line_kws = {"color": "cyan"})
+
+#%%
+
+''' actual mathematical regression '''
 
