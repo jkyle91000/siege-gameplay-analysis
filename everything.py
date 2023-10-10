@@ -22,6 +22,12 @@ data_dropped = data.dropna()
 
 #%%
 
+# filling all nan values with 0
+
+data_filled = data.fillna(0)
+
+#%%
+
 # preparing data for mean score and standardizing scores for wins and losses
 data_scores = data.dropna(subset = ["Score"])
 data_scores.fillna(0)
@@ -266,8 +272,63 @@ scores_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\scores table.
 
 #%%
 
-def atk_def_breakdown(level_name, squad_size):
-    return
+def atk_def_breakdown(map_name, squad_size):
+    
+    global atk_ratio, def_ratio
+    
+    data_filtered = data_filled[data_filled["Map"] == map_name]
+    data_filtered = data_filtered[data_filtered["Squad Size"] == squad_size]
+    
+    atk_wins = data_filtered["ATK Wins"].sum()
+    atk_losses = data_filtered["ATK Losses"].sum()
+    def_wins = data_filtered["DEF Wins"].sum()
+    def_losses = data_filtered["DEF Losses"].sum()
+    
+    if atk_losses == 0:
+        atk_ratio = atk_wins
+    else:
+        atk_ratio = atk_wins/atk_losses
+        
+    if def_losses == 0:
+        def_ratio = def_wins
+    else:
+        def_ratio = def_wins/def_losses
+    
+    return atk_ratio, def_ratio
+
+
+#%%
+
+atk_def_table = pd.DataFrame(columns = ["Map",
+                                        "Squad Size",
+                                        "ATK Win/Loss",
+                                        "DEF Win/Loss"])
+
+#%%
+
+levels = []
+squads = []
+atk_ratios = []
+def_ratios = []
+
+for i in maps:
+    for j in sizes:
+        atk_def_breakdown(i, j)
+        levels.append(i)
+        squads.append(j)
+        atk_ratios.append(atk_ratio)
+        def_ratios.append(def_ratio)
+    
+#%%
+
+atk_def_table["Map"] = levels
+atk_def_table["Squad Size"] = squads
+atk_def_table["ATK Win/Loss"] = atk_ratios
+atk_def_table["DEF Win/Loss"] = def_ratios
+
+atk_def_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\atk_def_table.xlsx")
+
+#%%
 
 #%%
 
@@ -276,6 +337,7 @@ def all_the_damn_data(level_name, squad_size):
     win_loss_map_squad(level_name, squad_size)
     kill_death_map_squad(level_name, squad_size)
     score_stuff(level_name, squad_size)
+    atk_def_breakdown(level_name, squad_size)
     
 #%%
 
@@ -285,6 +347,8 @@ kd_ratios = []
 kda_ratios = []
 scores = []
 wl_ratios = []
+atk_ratios = []
+def_ratios = []
 
 for i in maps:
     for j in sizes:
@@ -295,6 +359,8 @@ for i in maps:
         kda_ratios.append(kda)
         scores.append(average_score)
         wl_ratios.append(wl)
+        atk_ratios.append(atk_ratio)
+        def_ratios.append(def_ratio)
         
 #%%
 
@@ -303,12 +369,16 @@ big_fucking_table = pd.DataFrame(columns = ["Map",
                                             "K/D",
                                             "KA/D",
                                             "Average Score",
+                                            "ATK Win/Loss",
+                                            "DEF Win/Loss",
                                             "W/L"])
 big_fucking_table["Map"] = levels
 big_fucking_table["Squad Size"] = squads
 big_fucking_table["K/D"] = kd_ratios
 big_fucking_table["KA/D"] = kda_ratios
 big_fucking_table["Average Score"] = scores
+big_fucking_table["ATK Win/Loss"] = atk_ratios
+big_fucking_table["DEF Win/Loss"] = def_ratios
 big_fucking_table["W/L"] = wl_ratios
 
 big_fucking_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\big_fucking_table.xlsx")
