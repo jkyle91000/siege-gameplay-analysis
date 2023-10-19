@@ -5,6 +5,7 @@ import seaborn as sns
 #%%
 
 data = pd.read_csv("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\siege stats - everything.csv")
+data = data.drop("Game #", axis = 1)
 
 #%%
 
@@ -38,113 +39,18 @@ data_scores["Adjusted Score"] = data_scores["Adjusted Score"].fillna(data_scores
 #%%
 
 # lists i need
-maps = ["Bank",
-        "Border",
-        "Chalet",
-        "Club House",
-        "Coastline",
-        "Consulate",
-        "Emerald Plains",
-        "Kafe Dostoyevsky",
-        "Kanal",
-        "Nighthaven Labs",
-        "Oregon",
-        "Outback",
-        "Skyscraper",
-        "Stadium Bravo",
-        "Theme Park",
-        "Villa"]
+maps = list(data["Map"].unique())
+maps = sorted(maps)
 
-sizes = [1, 2, 3, 4, 5]
-
-
-#%%
-
-def kill_death(map_name):
-
-    global kd, kda
-
-    kills = data_filled.loc[data_filled["Map"] == map_name, "Kills"].sum()
-    deaths = data_filled.loc[data_filled["Map"] == map_name, "Deaths"].sum()
-    assists = 1/3 * data_filled.loc[data_filled["Map"] == map_name, "Assists"].sum()
-    
-    if deaths == 0:
-        kd = kills
-        kda = kills + assists
-    else:
-        kd = kills/deaths
-        kda = (kills + assists)/deaths
-        
-    return kd, kda
-
-#%%
-
-kd_ratios = []
-kd_assists = []
-
-for i in maps:
-    kill_death(i)
-    kd_ratios.append(kd)
-    kd_assists.append(kda)
-
-#%%
-
-maps_table = pd.DataFrame(data = maps)
-maps_table["K/D"] = kd_ratios
-maps_table["K/DA"] = kd_assists
-
-maps_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\Ranked 2 KD by Maps.xlsx")
-
-#%%
-
-def kill_death_squad(size):
-
-    global kd, kda
-
-    kills = data_filled.loc[data_filled["Squad Size"] == size, "Kills"].sum()
-    deaths = data_filled.loc[data_filled["Squad Size"] == size, "Deaths"].sum()
-    assists = 1/3 * data_filled.loc[data_filled["Squad Size"] == size, "Assists"].sum()
-    
-    if deaths == 0:
-        kd = kills
-        kda = kills + assists
-    else:
-        kd = kills/deaths
-        kda = (kills + assists)/deaths
-        
-    return kd, kda
-
-#%%
-
-kd_ratios_squad = []
-kd_assists_squad = []
-
-for i in sizes:
-    kill_death_squad(i)
-    kd_ratios_squad.append(kd)
-    kd_assists_squad.append(kda)
-    
-#%%
-
-squads_table = pd.DataFrame(data = sizes)
-
-squads_table["K/D"] = kd_ratios_squad
-squads_table["K/DA"] = kd_assists_squad
-
-squads_table.to_excel("C:\\Users\\aethe\OneDrive\\Desktop\\stats\\Ranked 2 KD by Squad.xlsx")
-
-#%%
-
-squad_map_table = pd.DataFrame(columns = ["Map",
-                                          "Squad Size",
-                                          "K/D",
-                                          "KA/D"])
+sizes = list(data["Squad Size"].unique())
+del sizes[0]
+sizes = sorted(sizes)
 
 #%%
 
 def kill_death_map_squad(map_name, squad_size):
     
-    global kd, kda
+    global kd, kda, games
     
     data_filtered = data_filled[data_filled["Map"] == map_name]
         
@@ -152,6 +58,8 @@ def kill_death_map_squad(map_name, squad_size):
     deaths = data_filtered.loc[data_filtered["Squad Size"] == squad_size, "Deaths"].sum()
     assists = data_filtered.loc[data_filtered["Squad Size"] == squad_size, "Assists"].sum() * 1/3
     
+    games = len(data_filtered[(data_filtered["Squad Size"] == squad_size)])
+    
     if deaths == 0:
         kd = kills
         kda = kills + assists
@@ -159,9 +67,10 @@ def kill_death_map_squad(map_name, squad_size):
         kd = kills/deaths
         kda = (kills + assists)/deaths
 
-    return map_name, squad_size, kd, kda
     
-
+    #print(f"map {map_name}, squad {squad_size}, kd {kd}, kda {kda}, games {games}")
+    return map_name, squad_size, kd, kda, games
+    
 #%%
 
 maps_for_table = []
@@ -238,12 +147,12 @@ def score_stuff(map_name, squad_size):
     data_filtered = data_filtered[data_filtered["Squad Size"] == squad_size]
     
     score = data_filtered.loc[data_filtered["Squad Size"] == squad_size, "Adjusted Score"].sum()
-    count = len(data_filtered)
+    games = len(data_filtered)
     
-    if count == 0:
+    if games == 0:
         average_score = 0
     else:
-        average_score = score/count
+        average_score = score/games
     
     return average_score
 
@@ -330,8 +239,6 @@ atk_def_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\atk_def_tabl
 
 #%%
 
-#%%
-
 def all_the_damn_data(level_name, squad_size):
 
     win_loss_map_squad(level_name, squad_size)
@@ -343,6 +250,7 @@ def all_the_damn_data(level_name, squad_size):
 
 levels = []
 squads = []
+games_played = []
 kd_ratios = []
 kda_ratios = []
 scores = []
@@ -355,6 +263,7 @@ for i in maps:
         all_the_damn_data(i, j)
         levels.append(i)
         squads.append(j)
+        games_played.append(games)
         kd_ratios.append(kd)
         kda_ratios.append(kda)
         scores.append(average_score)
@@ -366,6 +275,7 @@ for i in maps:
 
 big_fucking_table = pd.DataFrame(columns = ["Map",
                                             "Squad Size",
+                                            "Games",
                                             "K/D",
                                             "KA/D",
                                             "Average Score",
@@ -374,6 +284,7 @@ big_fucking_table = pd.DataFrame(columns = ["Map",
                                             "W/L"])
 big_fucking_table["Map"] = levels
 big_fucking_table["Squad Size"] = squads
+big_fucking_table["Games"] = games_played
 big_fucking_table["K/D"] = kd_ratios
 big_fucking_table["KA/D"] = kda_ratios
 big_fucking_table["Average Score"] = scores
@@ -382,3 +293,153 @@ big_fucking_table["DEF Win/Loss"] = def_ratios
 big_fucking_table["W/L"] = wl_ratios
 
 big_fucking_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\big_fucking_table.xlsx")
+
+#%%
+
+warm_ups = list(data["Warm-Up"].unique())
+del warm_ups[0]
+print(warm_ups)
+
+#%%
+
+def warm_up_stats(warm_up):
+    
+    global kd_ratio, kda_ratio, wl_ratio, games
+    
+    data_filtered = data_filled[data_filled["Warm-Up"] == warm_up]
+    
+    kills = data_filtered["Kills"].sum()
+    deaths = data_filtered["Deaths"].sum()
+    assists = data_filtered["Assists"].sum()
+    assists = assists*(1/3)
+    wins = len(data_filtered[(data_filtered["Outcome"] == "win")])
+    losses = len(data_filtered[(data_filtered["Outcome"] == "loss")])
+    games = len(data_filtered)
+
+    if deaths == 0:
+        kd_ratio = kills
+        kda_ratio = kills + assists
+    else:
+        kd_ratio = kills/deaths
+        kda_ratio = (kills + assists)/deaths
+    
+    if losses == 0:
+        wl_ratio = wins
+    else:
+        wl_ratio = wins/losses
+        
+    return warm_up, kd_ratio, kda_ratio, wl_ratio, games
+
+#%%
+
+warm_ups_out = []
+games_count = []
+kd_ratios = []
+kda_ratios = []
+wl_ratios = []
+
+for i in warm_ups:
+    warm_up_stats(i)
+    warm_ups_out.append(i)
+    games_count.append(games)
+    kd_ratios.append(kd_ratio)
+    kda_ratios.append(kda_ratio)
+    wl_ratios.append(wl_ratio)
+    
+#%%
+
+warm_ups_table = pd.DataFrame(columns = ["Warm-Up",
+                                         "Games",
+                                         "K/D",
+                                         "KA/D",
+                                         "W/L"])
+warm_ups_table["Warm-Up"] = warm_ups_out
+warm_ups_table["Games"] = games_count
+warm_ups_table["K/D"] = kd_ratios
+warm_ups_table["KA/D"] = kda_ratios
+warm_ups_table["W/L"] = wl_ratios
+
+warm_ups_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\warm_ups_table.xlsx")
+
+#%%
+
+def kill_death(map_name):
+
+    global kd, kda
+
+    kills = data_filled.loc[data_filled["Map"] == map_name, "Kills"].sum()
+    deaths = data_filled.loc[data_filled["Map"] == map_name, "Deaths"].sum()
+    assists = 1/3 * data_filled.loc[data_filled["Map"] == map_name, "Assists"].sum()
+    
+    if deaths == 0:
+        kd = kills
+        kda = kills + assists
+    else:
+        kd = kills/deaths
+        kda = (kills + assists)/deaths
+        
+    return kd, kda
+
+#%%
+
+kd_ratios = []
+kd_assists = []
+
+for i in maps:
+    kill_death(i)
+    kd_ratios.append(kd)
+    kd_assists.append(kda)
+
+#%%
+
+maps_table = pd.DataFrame(data = maps)
+maps_table["K/D"] = kd_ratios
+maps_table["K/DA"] = kd_assists
+
+maps_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\Ranked 2 KD by Maps.xlsx")
+
+#%%
+
+def kill_death_squad(size):
+
+    global kd, kda
+
+    kills = data_filled.loc[data_filled["Squad Size"] == size, "Kills"].sum()
+    deaths = data_filled.loc[data_filled["Squad Size"] == size, "Deaths"].sum()
+    assists = 1/3 * data_filled.loc[data_filled["Squad Size"] == size, "Assists"].sum()
+    
+    if deaths == 0:
+        kd = kills
+        kda = kills + assists
+    else:
+        kd = kills/deaths
+        kda = (kills + assists)/deaths
+        
+    return kd, kda
+
+#%%
+
+kd_ratios_squad = []
+kd_assists_squad = []
+
+for i in sizes:
+    kill_death_squad(i)
+    kd_ratios_squad.append(kd)
+    kd_assists_squad.append(kda)
+    
+#%%
+
+squads_table = pd.DataFrame(data = sizes)
+
+squads_table["K/D"] = kd_ratios_squad
+squads_table["K/DA"] = kd_assists_squad
+
+squads_table.to_excel("C:\\Users\\aethe\OneDrive\\Desktop\\stats\\Ranked 2 KD by Squad.xlsx")
+
+#%%
+
+squad_map_table = pd.DataFrame(columns = ["Map",
+                                          "Squad Size",
+                                          "K/D",
+                                          "KA/D"])
+
