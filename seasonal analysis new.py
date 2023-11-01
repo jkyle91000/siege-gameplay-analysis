@@ -1,4 +1,7 @@
+#%%
+
 import pandas as pd
+import openpyxl
 
 #%%
 
@@ -60,7 +63,7 @@ def prepare_lifetime_data():
     
     return lifetime, lifetime_dropped, lifetime_filled, lifetime_scores
 
-#%%
+# %%
 
 prepare_season_data("Y8S3 - Heavy Mettle") #update for current season
 prepare_lifetime_data()
@@ -373,63 +376,51 @@ def score_comparator():
     
     return score_levels_table, score_squads_table
 
-
 #%%
 
-wl_comparator()
-kd_comparator()
-score_comparator()
+josh_scores = season.dropna(subset = ["Josh Score"])
+josh_scores.fillna(0)
+josh_scores["Adjusted Score"] = josh_scores.loc[josh_scores["Outcome"] == "win", "Josh Score"] - 2000
+josh_scores["Adjusted Score"] = josh_scores["Adjusted Score"].fillna(josh_scores.loc[josh_scores["Outcome"] == "loss", "Josh Score"])
 
-#%%
+josh_total = josh_scores["Adjusted Score"].sum()
+josh_count_season = len(josh_scores)
+josh_all_levels_avg = josh_total/josh_count_season
 
-def get_scores():
-    
-    global josh_all_levels_avg, asa_all_levels_avg, ed_all_levels_avg, luke_all_levels_avg
-    
-    josh_scores = season.dropna(subset = ["Josh Score"])
-    josh_scores.fillna(0)
-    josh_scores["Adjusted Score"] = josh_scores.loc[josh_scores["Outcome"] == "win", "Josh Score"] - 2000
-    josh_scores["Adjusted Score"] = josh_scores["Adjusted Score"].fillna(josh_scores.loc[josh_scores["Outcome"] == "loss", "Josh Score"])
-    
-    josh_total = josh_scores["Adjusted Score"].sum()
-    josh_count = len(josh_scores)
-    josh_all_levels_avg = josh_total/josh_count
-    
-    asa_scores = season.dropna(subset = ["Asa Score"])
-    asa_scores.fillna(0)
-    asa_scores["Adjusted Score"] = asa_scores.loc[asa_scores["Outcome"] == "win", "Asa Score"] - 2000
-    asa_scores["Adjusted Score"] = asa_scores["Adjusted Score"].fillna(asa_scores.loc[asa_scores["Outcome"] == "loss", "Asa Score"])
-    
-    asa_total = asa_scores["Adjusted Score"].sum()
-    asa_count = len(asa_scores)
-    asa_all_levels_avg = asa_total/asa_count
-    
-    ed_scores = season.dropna(subset = ["Ed Score"])
-    ed_scores.fillna(0)
-    ed_scores["Adjusted Score"] = ed_scores.loc[ed_scores["Outcome"] == "win", "Ed Score"] - 2000
-    ed_scores["Adjusted Score"] = ed_scores["Adjusted Score"].fillna(ed_scores.loc[ed_scores["Outcome"] == "loss", "Ed Score"])
-    
-    ed_total = ed_scores["Adjusted Score"].sum()
-    ed_count = len(ed_scores)
-    ed_all_levels_avg = ed_total/ed_count
-    
-    luke_scores = season.dropna(subset = ["Luke Score"])
-    luke_scores.fillna(0)
-    luke_scores["Adjusted Score"] = luke_scores.loc[luke_scores["Outcome"] == "win", "Luke Score"] - 2000
-    luke_scores["Adjusted Score"] = luke_scores["Adjusted Score"].fillna(luke_scores.loc[luke_scores["Outcome"] == "loss", "Luke Score"])
-    
-    luke_total = luke_scores["Adjusted Score"].sum()
-    luke_count = len(luke_scores)
-    luke_all_levels_avg = luke_total/luke_count
-    
-    return josh_all_levels_avg, asa_all_levels_avg, ed_all_levels_avg, luke_all_levels_avg
+asa_scores = season.dropna(subset = ["Asa Score"])
+asa_scores.fillna(0)
+asa_scores["Adjusted Score"] = asa_scores.loc[asa_scores["Outcome"] == "win", "Asa Score"] - 2000
+asa_scores["Adjusted Score"] = asa_scores["Adjusted Score"].fillna(asa_scores.loc[asa_scores["Outcome"] == "loss", "Asa Score"])
+
+asa_total = asa_scores["Adjusted Score"].sum()
+asa_count_season = len(asa_scores)
+asa_all_levels_avg = asa_total/asa_count_season
+
+ed_scores = season.dropna(subset = ["Ed Score"])
+ed_scores.fillna(0)
+ed_scores["Adjusted Score"] = ed_scores.loc[ed_scores["Outcome"] == "win", "Ed Score"] - 2000
+ed_scores["Adjusted Score"] = ed_scores["Adjusted Score"].fillna(ed_scores.loc[ed_scores["Outcome"] == "loss", "Ed Score"])
+
+ed_total = ed_scores["Adjusted Score"].sum()
+ed_count_season = len(ed_scores)
+ed_all_levels_avg = ed_total/ed_count_season
+
+luke_scores = season.dropna(subset = ["Luke Score"])
+luke_scores.fillna(0)
+luke_scores["Adjusted Score"] = luke_scores.loc[luke_scores["Outcome"] == "win", "Luke Score"] - 2000
+luke_scores["Adjusted Score"] = luke_scores["Adjusted Score"].fillna(luke_scores.loc[luke_scores["Outcome"] == "loss", "Luke Score"])
+
+luke_total = luke_scores["Adjusted Score"].sum()
+luke_count_season = len(luke_scores)
+luke_all_levels_avg = luke_total/luke_count_season
 
 #%%
 
 def individual_performance_calculator(level_name):
     
-    global josh_avg, asa_avg, ed_avg, luke_avg
-    
+    global josh_avg, asa_avg, ed_avg, luke_avg, josh_count, asa_count, ed_count, luke_count
+
+
     josh_filtered = josh_scores[josh_scores["Map"] == level_name]
     asa_filtered = asa_scores[asa_scores["Map"] == level_name]
     ed_filtered = ed_scores[ed_scores["Map"] == level_name]
@@ -465,7 +456,7 @@ def individual_performance_calculator(level_name):
     else:
         luke_avg = luke_total/luke_count
     
-    return level_name, josh_avg, asa_avg, ed_avg, luke_avg
+    return level_name, josh_avg, asa_avg, ed_avg, luke_avg, josh_count, asa_count, ed_count, luke_count
 
 #%%
 
@@ -475,25 +466,49 @@ def individual_perforamnce_constructor():
     
     ip_score_levels = ["Average Score"]
     ip_josh_scores = [josh_all_levels_avg]
+    ip_josh_games = [josh_count_season]
     ip_asa_scores = [asa_all_levels_avg]
+    ip_asa_games = [asa_count_season]
     ip_ed_scores = [ed_all_levels_avg]
+    ip_ed_games = [ed_count_season]
     ip_luke_scores = [luke_all_levels_avg]
+    ip_luke_games = [luke_count_season]
     
     for level in levels:
         individual_performance_calculator(level)
         ip_score_levels.append(level)
         ip_josh_scores.append(josh_avg)
+        ip_josh_games.append(josh_count)
         ip_asa_scores.append(asa_avg)
+        ip_asa_games.append(asa_count)
         ip_ed_scores.append(ed_avg)
+        ip_ed_games.append(ed_count)
         ip_luke_scores.append(luke_avg)
+        ip_luke_games.append(luke_count)
         
     ip_table = pd.DataFrame({"Map": ip_score_levels,
                              "Josh Score": ip_josh_scores,
+                             "Josh Games": ip_josh_games,
                              "Asa Score": ip_asa_scores,
+                             "Asa Games": ip_asa_games,
                              "Ed Score": ip_ed_scores,
-                             "Luke Score": ip_luke_scores})
+                             "Ed Games": ip_ed_games,
+                             "Luke Score": ip_luke_scores,
+                             "Luke Games": ip_luke_games})
     
     return ip_table
+
+#%%
+
+wl_comparator()
+
+#%%
+
+kd_comparator()
+
+#%%
+
+score_comparator()
 
 #%%
 
@@ -501,3 +516,12 @@ individual_perforamnce_constructor()
 
 #%%
 
+wl_levels_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\win_loss_maps.xlsx")
+wl_squads_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\win_loss_squads.xlsx")
+kd_levels_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\kill_death_maps.xlsx")
+kd_squads_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\kill_death_squads.xlsx")
+score_levels_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\score_maps.xlsx")
+score_squads_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\score_squads.xlsx")
+ip_table.to_excel("C:\\Users\\aethe\\OneDrive\\Desktop\\stats\\individual_performance.xlsx")
+
+#%%
